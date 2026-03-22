@@ -16,7 +16,7 @@ jobs:
         env:
           POSTGRES_DB: bookxchange
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: amarn44m451QU3
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -43,7 +43,7 @@ jobs:
       env:
         SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/bookxchange
         SPRING_DATASOURCE_USERNAME: postgres
-        SPRING_DATASOURCE_PASSWORD: postgres
+        SPRING_DATASOURCE_PASSWORD: amarn44m451QU3
         SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
 
     - name: Run integration tests
@@ -51,7 +51,7 @@ jobs:
       env:
         SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/bookxchange
         SPRING_DATASOURCE_USERNAME: postgres
-        SPRING_DATASOURCE_PASSWORD: postgres
+        SPRING_DATASOURCE_PASSWORD: amarn44m451QU3
         SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
 
     - name: Build project
