@@ -10,6 +10,7 @@ permissions:
   checks: write
   contents: read
   pull-requests: read
+  issues: write
 
 jobs:
   build-and-test:
