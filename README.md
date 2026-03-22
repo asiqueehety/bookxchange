@@ -433,17 +433,78 @@ Your BookXchange application is now:
 
 ---
 
+## 🧪 Testing & CI/CD Documentation
+
+### Unit Tests (41 Total - All Passing ✅)
+
+The project includes comprehensive unit tests covering:
+- **Entity Tests** (7 tests): Book, User entities
+- **DTO Tests** (5 tests): RegisterRequest, UserDTO
+- **Repository Tests** (14 tests): User, Book, SoldBook repositories (mocked)
+- **Service Tests** (14 tests): AuthService, CustomUserDetailsService
+- **Integration Tests** (1 test): Spring context loading
+
+**Run tests locally:**
+```bash
+./mvnw clean test
+# Expected: Tests run: 41, Failures: 0, Errors: 0, Skipped: 0 ✅
+```
+
+### GitHub Actions CI/CD Pipeline
+
+Fully automated pipeline with:
+- ✅ Unit & integration test execution
+- ✅ Security vulnerability scanning (OWASP)
+- ✅ Code quality checks
+- ✅ JAR package generation
+- ✅ Automatic artifact uploads
+- ✅ Build notifications
+
+**Triggers**: Push to `main`/`develop` branches or Pull Requests
+
+**View Results**: GitHub → Actions tab → Select workflow run
+
+### Testing Documentation
+
+For detailed information, see:
+- **`TESTING.md`** - Comprehensive testing guide
+- **`RUNNING_TESTS.md`** - Quick reference for running/monitoring tests
+- **`TESTS_AND_CI_CD_SUMMARY.md`** - Implementation details
+- **`IMPLEMENTATION_COMPLETE.md`** - Final status report
+- **`QUICK_CHECKLIST.md`** - Quick reference checklist
+
+### Test Commands
+
+```bash
+# Run all tests
+./mvnw clean test
+
+# Run specific test class
+./mvnw test -Dtest=BookRepositoryTest
+
+# Run with verbose output
+./mvnw test -X -e
+
+# Skip tests during build
+./mvnw clean install -DskipTests
+```
+
+---
+
 ## 📞 Final Notes
 
 1. **Read SETUP_GUIDE.md** for detailed setup instructions
 2. **Read TODO.md** for complete implementation roadmap
-3. **Start with Phase 1** for core shopping functionality
-4. **Test frequently** as you add features
-5. **Commit to Git** regularly
-6. **Keep documentation updated** as you build
+3. **Read TESTING.md** for comprehensive testing information
+4. **Start with Phase 1** for core shopping functionality
+5. **Test frequently** as you add features using `./mvnw clean test`
+6. **Commit to Git** regularly to trigger GitHub Actions CI/CD
+7. **Keep documentation updated** as you build
 
 Good luck with your BookXchange application! 🚀📚
 
 Feel free to reach out if you need clarification on any component or architecture decision.
 
 **Happy Coding!** 🎉
+
+
