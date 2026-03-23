@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - BookXchange</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --secondary-color: #ec4899;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-container {
+            max-width: 1000px;
+            margin: 30px auto;
+        }
+
+        .profile-header {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-picture-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .profile-picture {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid var(--primary-color);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+
+        .picture-placeholder {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 60px;
+            margin: 0 auto 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .user-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .user-info h2 {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .user-info p {
+            color: #666;
+            margin: 5px 0;
+            font-size: 16px;
+        }
+
+        .badge-role {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .badge-role.buyer {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-role.seller {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-role.admin {
+            background: #fecaca;
+            color: #991b1b;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 10px;
+            padding: 20px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card h4 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .nav-tabs {
+            border-bottom: 2px solid #e5e7eb;
+            gap: 10px;
+        }
+
+        .nav-link {
+            color: #666;
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 12px 20px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .nav-link.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+            background: transparent;
+        }
+
+        .tab-content {
+            background: white;
+            border-radius: 0 0 15px 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .form-control {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px 15px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: #5558e3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 20px;
+            border: 2px dashed var(--primary-color);
+            border-radius: 8px;
+            cursor: pointer;
+            background: #f9fafb;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .file-input-label:hover {
+            background: #f3f4f6;
+            border-color: var(--secondary-color);
+            color: var(--secondary-color);
+        }
+
+        .file-input-label input {
+            display: none;
+        }
+
+        .alert {
+            border-radius: 8px;
+            border: none;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .alert-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .info-box {
+            background: #f0f9ff;
+            border-left: 4px solid var(--primary-color);
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            color: #0c4a6e;
+        }
+
+        .danger-zone {
+            background: #fff5f5;
+            border: 2px solid var(--danger-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .danger-zone h5 {
+            color: var(--danger-color);
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .member-since {
+            color: #999;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .profile-header {
+                padding: 20px;
+            }
+
+            .profile-picture {
+                width: 120px;
+                height: 120px;
+            }
+
+            .picture-placeholder {
+                width: 120px;
+                height: 120px;
+                font-size: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light navbar-custom sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-book"></i> BookXchange
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/user/profile">Profile</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="profile-container">
+        <!-- Alert Messages -->
+        <div th:if="${success}" class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <span th:text="${success}"></span>
+        </div>
+        <div th:if="${error}" class="alert alert-danger">
+            <i class="fas fa-exclamation-circle"></i>
+            <span th:text="${error}"></span>
+        </div>
+
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="profile-picture-section">
+                <div th:if="${userStats.profilePic}">
+                    <img th:src="@{/uploads/profiles/{pic}(pic=${userStats.profilePic})}" alt="Profile Picture" class="profile-picture">
+                </div>
+                <div th:unless="${userStats.profilePic}" class="picture-placeholder">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+
+            <div class="user-info">
+                <h2 th:text="${userStats.username}"></h2>
+                <p th:text="${userStats.userEmail}"></p>
+                <span th:classappend="'badge-role ' + ${userStats.userRole.name().toLowerCase()}" class="badge-role">
+                    <th:block th:switch="${userStats.userRole.name()}">
+                        <th:block th:case="'BUYER'">👤 Buyer</th:block>
+                        <th:block th:case="'SELLER'">📚 Seller</th:block>
+                        <th:block th:case="'ADMIN'">⚙️ Admin</th:block>
+                    </th:block>
+                </span>
+                <div class="member-since">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span th:text="'Member since ' + ${#temporals.format(userStats.dateJoined, 'MMMM dd, yyyy')}"></span>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4 th:text="${userStats.totalBooksPosted}"></h4>
+                    <p>Books Posted</p>
+                </div>
+                <div class="stat-card">
+                    <h4 th:text="${userStats.totalBooksSold}"></h4>
+                    <p>Books Sold</p>
+                </div>
+                <div class="stat-card">
+                    <h4 th:text="${userStats.totalBooksPurchased}"></h4>
+                    <p>Books Purchased</p>
+                </div>
+                <div class="stat-card">
+                    <h4 th:text="${userStats.totalRequestsMade}"></h4>
+                    <p>Requests Made</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">
+                    <i class="fas fa-user-edit"></i> Edit Profile
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password" type="button" role="tab">
+                    <i class="fas fa-lock"></i> Change Password
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="picture-tab" data-bs-toggle="tab" data-bs-target="#picture" type="button" role="tab">
+                    <i class="fas fa-image"></i> Profile Picture
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab">
+                    <i class="fas fa-sliders-h"></i> Settings
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Edit Profile Tab -->
+            <div class="tab-pane fade show active" id="profile" role="tabpanel">
+                <h3 class="mb-4">Edit Profile Information</h3>
+                <form th:action="@{/user/profile/update}" method="POST">
+                    <div class="info-box">
+                        <i class="fas fa-info-circle"></i>
+                        Update your personal information. Username and email must be unique.
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="username">Username</label>
+                            <input type="text" class="form-control" id="username" name="username"
+                                   th:value="${userStats.username}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="userEmail">Email Address</label>
+                            <input type="email" class="form-control" id="userEmail" name="userEmail"
+                                   th:value="${userStats.userEmail}" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </form>
+            </div>
+
+            <!-- Change Password Tab -->
+            <div class="tab-pane fade" id="password" role="tabpanel">
+                <h3 class="mb-4">Change Password</h3>
+                <form th:action="@{/user/profile/change-password}" method="POST">
+                    <div class="info-box">
+                        <i class="fas fa-info-circle"></i>
+                        Enter your current password and your new password. Password must be at least 6 characters.
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="oldPassword">Current Password</label>
+                        <input type="password" class="form-control" id="oldPassword" name="oldPassword" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="newPassword">New Password</label>
+                            <input type="password" class="form-control" id="newPassword" name="newPassword"
+                                   minlength="6" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="confirmPassword">Confirm Password</label>
+                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword"
+                                   minlength="6" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-lock"></i> Update Password
+                    </button>
+                </form>
+            </div>
+
+            <!-- Profile Picture Tab -->
+            <div class="tab-pane fade" id="picture" role="tabpanel">
+                <h3 class="mb-4">Profile Picture</h3>
+                <div class="info-box">
+                    <i class="fas fa-info-circle"></i>
+                    Upload a profile picture (JPG, PNG, GIF, or WebP). Maximum file size: 5MB.
+                </div>
+
+                <!-- Current Picture -->
+                <div th:if="${userStats.profilePic}" class="text-center mb-4">
+                    <h5>Current Picture:</h5>
+                    <img th:src="@{/uploads/profiles/{pic}(pic=${userStats.profilePic})}" alt="Current Profile"
+                         style="width: 200px; height: 200px; object-fit: cover; border-radius: 10px; margin: 20px 0;">
+
+                    <form th:action="@{/user/profile/delete-picture}" method="POST" style="display: inline;">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to remove your profile picture?')">
+                            <i class="fas fa-trash"></i> Remove Picture
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Upload Form -->
+                <form th:action="@{/user/profile/upload-picture}" method="POST" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="profilePicture" class="file-input-label">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span id="fileName">Click to select or drag file here</span>
+                        </label>
+                        <input type="file" id="profilePicture" name="profilePicture" accept="image/*" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Upload Picture
+                    </button>
+                </form>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-pane fade" id="settings" role="tabpanel">
+                <h3 class="mb-4">Account Settings</h3>
+
+                <!-- Danger Zone -->
+                <div class="danger-zone">
+                    <h5>⚠️ Danger Zone</h5>
+                    <p>Once you delete your account, there is no going back. Please be certain.</p>
+
+                    <form th:action="@{/user/profile/delete-account}" method="POST" style="display: inline;">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you absolutely sure? This action cannot be undone. All your data will be permanently deleted.')">
+                            <i class="fas fa-trash-alt"></i> Delete Account
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Other Settings -->
+                <div class="mt-4">
+                    <h5>Account Information</h5>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <p><strong>User ID:</strong></p>
+                            <code th:text="${userStats.uid}"></code>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Account Type:</strong></p>
+                            <p th:text="${userStats.userRole.name()}"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer style="background: rgba(255, 255, 255, 0.95); margin-top: 50px; padding: 20px; text-align: center;">
+        <p>&copy; 2024 BookXchange. All rights reserved.</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // File input label update
+        document.getElementById('profilePicture')?.addEventListener('change', function(e) {
+            const fileName = document.getElementById('fileName');
+            if (this.files && this.files[0]) {
+                fileName.textContent = this.files[0].name;
+            }
+        });
+
+        // Drag and drop
+        const fileInput = document.getElementById('profilePicture');
+        const fileLabel = document.querySelector('.file-input-label');
+
+        if (fileLabel) {
+            fileLabel.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileLabel.style.background = '#f3f4f6';
+                fileLabel.style.borderColor = 'var(--secondary-color)';
+            });
+
+            fileLabel.addEventListener('dragleave', () => {
+                fileLabel.style.background = '#f9fafb';
+                fileLabel.style.borderColor = 'var(--primary-color)';
+            });
+
+            fileLabel.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if (e.dataTransfer.files) {
+                    fileInput.files = e.dataTransfer.files;
+                    document.getElementById('fileName').textContent = e.dataTransfer.files[0].name;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
