@@ -179,27 +179,37 @@ app.upload.max-size=5MB
 
 ---
 
-### **PHASE 3: User Profile & Management** (Priority: MEDIUM)
+### **PHASE 3: User Profile & Management** (Priority: MEDIUM) ✅ **COMPLETE**
 
-#### 1. **User Profile Page**
-```html
-Template: src/main/resources/templates/user/profile.html
-Features:
-- Display user information
-- Edit profile functionality
-- Change password
-- Upload profile picture
-- View account statistics
-```
+#### ✅ COMPLETED:
+- ✅ User Profile Page - Display user information
+- ✅ Edit Profile Functionality - Update username and email
+- ✅ Change Password - Secure password update with BCrypt
+- ✅ Upload Profile Picture - Image upload with validation
+- ✅ View Account Statistics - Display user stats (books, sales, purchases, requests)
+- ✅ Delete Account - Account deletion with cleanup
+- ✅ FileUploadService - File handling and storage
+- ✅ WebConfig - Static file serving
+- ✅ Security Configuration - Route protection
+- ✅ Profile Template - Responsive UI with tabs
 
-#### 2. **User Management Service**
-```java
-// UserService.java
-- updateProfile(userId, userDTO): User
-- changePassword(userId, oldPassword, newPassword): void
-- deleteAccount(userId): void
-- getUserStats(userId): UserStats
-```
+**Files Created:**
+- `UserService.java`
+- `FileUploadService.java`
+- `UserProfileController.java`
+- `UpdateProfileRequest.java`
+- `ChangePasswordRequest.java`
+- `UserStatsDTO.java`
+- `WebConfig.java`
+- `profile.html`
+
+**Repository Updates:**
+- BookRepository - Added countBySellerId()
+- SoldBookRepository - Added count methods
+- BookRequestRepository - Added countByBuyerId()
+
+**Documentation:**
+- `USER_PROFILE_DOCUMENTATION.md` - Complete guide
 
 ---
 
@@ -401,10 +411,10 @@ jobs:
 
 ## 📊 Suggested Implementation Order
 
-1. **Week 1**: Book Management (CRUD operations)
+1. **Week 1**: Book Management (CRUD operations) ⏳ NEXT
 2. **Week 2**: Book Requests & Shopping Cart
 3. **Week 3**: Purchase System & Dynamic Dashboards
-4. **Week 4**: File Upload & User Profiles
+4. **Week 4**: ✅ User Profiles (COMPLETE)
 5. **Week 5**: Search, Filter & Pagination
 6. **Week 6**: Payment Integration (Stripe)
 7. **Week 7**: Email & Notifications
@@ -473,6 +483,7 @@ CREATE TABLE payments (
 **Project Structure**: ✅ COMPLETE
 **Base Features**: ✅ IMPLEMENTED
 **Database Setup**: ✅ READY
+**User Profile & Management**: ✅ COMPLETE (Phase 3)
 **Ready for**: 📚 Phase 1 - Book Management
 
 ---
