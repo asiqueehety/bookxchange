@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${book.bookName} + ' - BookXchange'">Book Details - BookXchange</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --success-color: #059669;
+            --danger-color: #dc2626;
+            --light-bg: #f3f4f6;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary-color) !important;
+            font-size: 1.5rem;
+        }
+
+        .book-detail-container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            margin: 40px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .book-cover {
+            max-width: 300px;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            object-fit: cover;
+        }
+
+        .book-info h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #1f2937;
+        }
+
+        .book-author {
+            font-size: 1.2rem;
+            color: #6b7280;
+            margin-bottom: 20px;
+        }
+
+        .seller-info {
+            background: var(--light-bg);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .seller-info p {
+            margin: 5px 0;
+        }
+
+        .seller-username {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .price-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 8px;
+        }
+
+        .price {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .original-price {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            text-decoration: line-through;
+        }
+
+        .quantity-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--light-bg);
+            border-radius: 8px;
+        }
+
+        .quantity-label {
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .quantity-available {
+            font-size: 1.1rem;
+            color: var(--success-color);
+        }
+
+        .quantity-unavailable {
+            font-size: 1.1rem;
+            color: var(--danger-color);
+        }
+
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .quantity-control button {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border: 1px solid var(--primary-color);
+            background: white;
+            color: var(--primary-color);
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .quantity-control button:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .quantity-input {
+            width: 60px;
+            text-align: center;
+            border: 1px solid #d1d5db;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary-custom {
+            background: var(--primary-color);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .btn-primary-custom:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-secondary-custom {
+            background: white;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            padding: 10px 28px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .btn-secondary-custom:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger-custom {
+            background: var(--danger-color);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-danger-custom:hover {
+            background: #b91c1c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+        }
+
+        .book-description {
+            margin: 30px 0;
+        }
+
+        .description-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #1f2937;
+        }
+
+        .description-text {
+            line-height: 1.8;
+            color: #4b5563;
+            font-size: 1.05rem;
+        }
+
+        .book-meta {
+            margin: 30px 0;
+            padding: 20px;
+            background: var(--light-bg);
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .meta-item {
+            padding: 10px;
+        }
+
+        .meta-label {
+            font-weight: 600;
+            color: #6b7280;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .meta-value {
+            font-size: 1.1rem;
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        .alert-message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid var(--success-color);
+        }
+
+        .alert-danger {
+            background: #fee2e2;
+            color: #7f1d1d;
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .back-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .back-link:hover {
+            color: var(--secondary-color);
+            gap: 12px;
+        }
+
+        .out-of-stock {
+            background: var(--danger-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        @media (max-width: 768px) {
+            .book-detail-container {
+                padding: 20px;
+            }
+
+            .book-info h1 {
+                font-size: 1.8rem;
+            }
+
+            .price {
+                font-size: 1.8rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn-primary-custom, .btn-secondary-custom {
+                min-width: 100%;
+            }
+
+            .book-cover {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">BookXchange</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth/logout">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <a href="/dashboard" class="back-link">
+            <i class="fas fa-arrow-left"></i> Back to Books
+        </a>
+
+        <div class="book-detail-container">
+            <!-- Alert Messages -->
+            <div id="alertMessage" class="alert-message"></div>
+
+            <!-- Book Details Row -->
+            <div class="row">
+                <!-- Book Cover Column -->
+                <div class="col-md-4">
+                    <img th:src="${book.bookCoverPic}" alt="${book.bookName}" class="book-cover"
+                         onerror="this.src='https://via.placeholder.com/300x400?text=No+Image'">
+                </div>
+
+                <!-- Book Info Column -->
+                <div class="col-md-8">
+                    <!-- Book Title and Author -->
+                    <h1 th:text="${book.bookName}">Book Title</h1>
+                    <p class="book-author">
+                        <i class="fas fa-pen"></i>
+                        <span th:text="${'by ' + book.bookAuthor}">by Author Name</span>
+                    </p>
+
+                    <!-- Seller Info -->
+                    <div class="seller-info">
+                        <p>
+                            <strong>Seller:</strong>
+                            <span class="seller-username" th:text="${book.getSellerUsername() != null ? book.getSellerUsername() : 'Unknown'}">Seller Name</span>
+                        </p>
+                    </div>
+
+                    <!-- Price Section -->
+                    <div class="price-section">
+                        <div class="price" th:text="'$' + ${#numbers.formatDecimal(book.bookPrice, 1, 2)}">$29.99</div>
+                    </div>
+
+                    <!-- Quantity Section -->
+                    <div class="quantity-section">
+                        <div class="quantity-label">Availability:</div>
+                        <div th:if="${book.quantityLeft > 0}" class="quantity-available">
+                            <i class="fas fa-check-circle"></i>
+                            <span th:text="${book.quantityLeft + ' items available'}">Items available</span>
+                        </div>
+                        <div th:unless="${book.quantityLeft > 0}" class="quantity-unavailable">
+                            <i class="fas fa-times-circle"></i>
+                            Out of Stock
+                        </div>
+
+                        <!-- Quantity Control -->
+                        <div th:if="${book.quantityLeft > 0}" class="quantity-control">
+                            <button onclick="decreaseQuantity()">−</button>
+                            <input type="number" id="quantity" class="quantity-input" value="1" min="1"
+                                   th:max="${book.quantityLeft}" readonly>
+                            <button onclick="increaseQuantity()" th:data-max="${book.quantityLeft}">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div th:if="${book.quantityLeft > 0}" class="action-buttons">
+                        <button onclick="addToCart()" class="btn-primary-custom">
+                            <i class="fas fa-shopping-cart"></i> Add to Cart
+                        </button>
+                        <button onclick="buyNow()" class="btn-secondary-custom">
+                            <i class="fas fa-bolt"></i> Buy Now
+                        </button>
+                    </div>
+                    <div th:unless="${book.quantityLeft > 0}" class="out-of-stock">
+                        This book is currently out of stock
+                    </div>
+                </div>
+            </div>
+
+            <!-- Book Description -->
+            <div class="book-description">
+                <h3 class="description-title">Description</h3>
+                <p class="description-text" th:text="${book.bookShortPreview}">
+                    Book description goes here...
+                </p>
+            </div>
+
+            <!-- Book Metadata -->
+            <div class="book-meta">
+                <div class="meta-item">
+                    <div class="meta-label">Book ID</div>
+                    <div class="meta-value" th:text="${book.bookId}">ID</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Listed on</div>
+                    <div class="meta-value" th:text="${book.getCreatedAt() != null ? #temporals.format(book.getCreatedAt(), 'MMM dd, yyyy') : 'N/A'}">Date</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Price</div>
+                    <div class="meta-value" th:text="'$' + ${#numbers.formatDecimal(book.bookPrice, 1, 2)}">Price</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">In Stock</div>
+                    <div class="meta-value" th:text="${book.quantityLeft + ' units'}">Units</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loading" class="loading">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p>Processing your request...</p>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Get cookie value by name
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return '';
+        }
+
+        function decreaseQuantity() {
+            const input = document.getElementById('quantity');
+            const current = parseInt(input.value);
+            if (current > 1) {
+                input.value = current - 1;
+            }
+        }
+
+        function increaseQuantity() {
+            const input = document.getElementById('quantity');
+            const current = parseInt(input.value);
+            const max = parseInt(input.max);
+            if (current < max) {
+                input.value = current + 1;
+            }
+        }
+
+        function addToCart() {
+            const quantity = parseInt(document.getElementById('quantity').value);
+            const bookId = '[[ ${book.bookId} ]]';
+            const bookName = '[[ ${book.bookName} ]]';
+
+            // Show loading
+            showLoading(true);
+
+            // Simulate API call
+            setTimeout(() => {
+                showLoading(false);
+                showAlert(`${bookName} (Quantity: ${quantity}) added to cart!`, 'success');
+
+                // In real implementation, make API call:
+                // POST /api/cart/add
+                // { bookId, quantity }
+            }, 500);
+        }
+
+        function buyNow() {
+            const quantity = parseInt(document.getElementById('quantity').value);
+            const bookId = '[[ ${book.bookId} ]]';
+            const bookName = '[[ ${book.bookName} ]]';
+
+            showLoading(true);
+
+            // Call the purchase API
+            fetch('/api/books/purchase', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': getCookie('XSRF-TOKEN')
+                },
+                body: JSON.stringify({
+                    bookId: bookId,
+                    quantity: quantity
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                showLoading(false);
+                if (data.error) {
+                    showAlert('Error: ' + data.error, 'danger');
+                } else {
+                    showAlert('Purchase successful! ' + bookName + ' has been added to your purchases.', 'success');
+                    // Refresh the page after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 2000);
+                }
+            })
+            .catch(error => {
+                showLoading(false);
+                showAlert('Error: ' + error.message, 'danger');
+            });
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('alertMessage');
+            alertDiv.textContent = message;
+            alertDiv.className = 'alert-message alert-' + type;
+            alertDiv.style.display = 'block';
+
+            setTimeout(() => {
+                alertDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            if (show) {
+                loading.classList.add('active');
+            } else {
+                loading.classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html>

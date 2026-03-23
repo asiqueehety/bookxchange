@@ -380,9 +380,10 @@
             <!-- Manage Books Tab -->
             <div id="books" class="tab-content">
                 <div class="search-box">
-                    <input type="text" placeholder="Search books by title or author...">
+                    <input type="text" id="adminSearchBooks" placeholder="Search books by title or author...">
+                    <button onclick="searchAdminBooks()" class="btn btn-primary" style="margin-top: 1rem;">Search</button>
                 </div>
-                <table>
+                <table id="booksTable">
                     <thead>
                         <tr>
                             <th>Title</th>
@@ -390,15 +391,16 @@
                             <th>Seller</th>
                             <th>Price</th>
                             <th>Quantity</th>
+                            <th>Created</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="booksTableBody">
+                        <tr style="text-align: center;">
+                            <td colspan="7">Loading books...</td>
+                        </tr>
                     </tbody>
                 </table>
-                <div class="empty-state">
-                    <p>No books found</p>
-                </div>
             </div>
 
             <!-- Book Requests Tab -->
@@ -439,8 +441,14 @@
     </div>
 
     <script>
+        let adminCurrentPage = 0;
+        let adminPageSize = 20;
+        let adminSearchQuery = '';
+
         function switchTab(event, tabName) {
-            event.preventDefault();
+            if (event) {
+                event.preventDefault();
+            }
 
             // Hide all tab contents
             const contents = document.querySelectorAll('.tab-content');
@@ -451,9 +459,141 @@
             tabs.forEach(tab => tab.classList.remove('active'));
 
             // Show selected tab content and mark tab as active
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
+            const tabContent = document.getElementById(tabName);
+            if (tabContent) {
+                tabContent.classList.add('active');
+            }
+
+            // Find and activate the correct tab button
+            if (event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                // If event is not available, find the button by onclick attribute
+                const tabButton = Array.from(tabs).find(tab =>
+                    tab.getAttribute('onclick') && tab.getAttribute('onclick').includes(`'${tabName}'`)
+                );
+                if (tabButton) {
+                    tabButton.classList.add('active');
+                }
+            }
+
+            // Load books when Manage Books tab is clicked
+            if (tabName === 'books') {
+                loadAdminBooks();
+            }
         }
+
+        // Load all books for admin (including out of stock)
+        async function loadAdminBooks() {
+            try {
+                const url = adminSearchQuery
+                    ? `/api/books/search?query=${encodeURIComponent(adminSearchQuery)}&page=${adminCurrentPage}&size=${adminPageSize}`
+                    : `/api/books?page=${adminCurrentPage}&size=${adminPageSize}`;
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Failed to fetch books');
+
+                const data = await response.json();
+                const tbody = document.getElementById('booksTableBody');
+                tbody.innerHTML = '';
+
+                if (data.content && data.content.length > 0) {
+                    data.content.forEach(book => {
+                        const row = createBookRow(book);
+                        tbody.appendChild(row);
+                    });
+
+                    // Add pagination row
+                    if (data.totalPages > 1) {
+                        const paginationRow = document.createElement('tr');
+                        paginationRow.style.cssText = 'background-color: #f9f9f9; border-top: 2px solid #ddd;';
+
+                        let paginationHTML = '<td colspan="7" style="padding: 1rem; text-align: center; display: flex; justify-content: center; gap: 1rem;">';
+
+                        if (adminCurrentPage > 0) {
+                            paginationHTML += '<button class="btn btn-primary" onclick="adminPrevPage()" style="padding: 0.5rem 1rem;">← Previous</button>';
+                        }
+
+                        paginationHTML += `<span style="padding: 0.5rem 1rem; background-color: #fff; border-radius: 5px;">Page ${adminCurrentPage + 1} of ${data.totalPages}</span>`;
+
+                        if (adminCurrentPage < data.totalPages - 1) {
+                            paginationHTML += '<button class="btn btn-primary" onclick="adminNextPage()" style="padding: 0.5rem 1rem;">Next →</button>';
+                        }
+
+                        paginationHTML += '</td>';
+                        paginationRow.innerHTML = paginationHTML;
+                        tbody.appendChild(paginationRow);
+                    }
+                } else {
+                    const row = document.createElement('tr');
+                    row.innerHTML = '<td colspan="7" style="text-align: center; padding: 2rem; color: #999;">No books found</td>';
+                    tbody.appendChild(row);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                const tbody = document.getElementById('booksTableBody');
+                tbody.innerHTML = '<tr style="text-align: center;"><td colspan="7" style="padding: 1rem; color: #c0392b;">Error loading books: ' + error.message + '</td></tr>';
+            }
+        }
+
+        // Create book table row
+        function createBookRow(book) {
+            const row = document.createElement('tr');
+            const createdDate = new Date(book.createdAt).toLocaleDateString();
+
+            row.innerHTML = `
+                <td>${book.bookName}</td>
+                <td>${book.bookAuthor}</td>
+                <td>${book.sellerUsername}</td>
+                <td>$${book.bookPrice}</td>
+                <td>${book.quantityLeft}</td>
+                <td>${createdDate}</td>
+                <td>
+                    <a href="/books/${book.bookId}" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem; display: inline-block; margin: 0.25rem;">View</a>
+                </td>
+            `;
+
+            return row;
+        }
+
+        // Search admin books
+        function searchAdminBooks() {
+            adminSearchQuery = document.getElementById('adminSearchBooks').value;
+            adminCurrentPage = 0;
+            loadAdminBooks();
+        }
+
+        // Admin pagination
+        function adminNextPage() {
+            adminCurrentPage++;
+            loadAdminBooks();
+        }
+
+        function adminPrevPage() {
+            adminCurrentPage--;
+            loadAdminBooks();
+        }
+
+        // Load books on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Only load if books tab is visible
+            const booksTab = document.getElementById('books');
+            if (booksTab && booksTab.classList.contains('active')) {
+                loadAdminBooks();
+            }
+        });
+
+        // Allow Enter key in search
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('adminSearchBooks');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        searchAdminBooks();
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>
