@@ -1,6 +1,7 @@
 services:
   postgres:
-    image: 'postgres:latest'
+    image: 'postgres:16'
+    platform: linux/amd64
     environment:
       - 'POSTGRES_DB=bookxchange'
       - 'POSTGRES_PASSWORD=amarn44m451QU3'

@@ -388,6 +388,7 @@
             <div class="tabs">
                 <button class="tab active" onclick="switchTab(event, 'add-book')">Add New Book</button>
                 <button class="tab" onclick="switchTab(event, 'my-books')">My Books</button>
+                <button class="tab" onclick="switchTab(event, 'sales')">Sales</button>
                 <button class="tab" onclick="switchTab(event, 'requests')">Book Requests</button>
             </div>
 
@@ -395,7 +396,7 @@
             <div id="add-book" class="tab-content active">
                 <div class="form-section">
                     <h3>📚 Add New Book</h3>
-                    <form>
+                    <form id="addBookForm" onsubmit="handleAddBook(event)">
                         <div class="form-group">
                             <label for="bookName">Book Title</label>
                             <input type="text" id="bookName" name="bookName" required>
@@ -437,18 +438,18 @@
             <div id="my-books" class="tab-content">
                 <h3 style="color: #2c3e50; margin-bottom: 2rem;">Your Listed Books</h3>
                 <div class="books-grid">
-                    <div class="book-card">
-                        <div class="book-cover">📖</div>
-                        <div class="book-info">
-                            <h3>Sample Book Title</h3>
-                            <p class="book-author">by Author Name</p>
-                            <p class="book-price">$9.99</p>
-                            <p class="book-quantity">In Stock: 5</p>
-                            <div class="book-actions">
-                                <button class="btn">Edit</button>
-                                <button class="btn btn-danger">Delete</button>
-                            </div>
-                        </div>
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <p>Loading your books...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales Tab -->
+            <div id="sales" class="tab-content">
+                <h3 style="color: #2c3e50; margin-bottom: 2rem;">Books Sold</h3>
+                <div class="books-grid">
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <p>Loading sales data...</p>
                     </div>
                 </div>
             </div>
@@ -456,16 +457,77 @@
             <!-- Book Requests Tab -->
             <div id="requests" class="tab-content">
                 <h3 style="color: #2c3e50; margin-bottom: 2rem;">Pending Book Requests</h3>
-                <div class="empty-state">
-                    <p>No pending requests at this time</p>
+                <div id="requestsContainer" class="requests-list">
+                    <div class="empty-state">
+                        <p>No pending requests at this time</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Edit Book Modal -->
+    <div id="editModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 2rem; border-radius: 8px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 5px 20px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="color: #2c3e50; margin: 0;">Edit Book</h3>
+                <button onclick="closeEditModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #666;">&times;</button>
+            </div>
+
+            <form id="editBookForm" onsubmit="handleEditBook(event)">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: #333; font-weight: 500;">Book Title</label>
+                    <input type="text" id="editBookName" name="bookName" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; color: #333; font-weight: 500;">Author</label>
+                        <input type="text" id="editBookAuthor" name="bookAuthor" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; color: #333; font-weight: 500;">Price ($)</label>
+                        <input type="number" id="editBookPrice" name="bookPrice" step="0.01" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; color: #333; font-weight: 500;">Quantity Available</label>
+                        <input type="number" id="editQuantityLeft" name="quantityLeft" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; color: #333; font-weight: 500;">Cover Image URL</label>
+                        <input type="text" id="editBookCoverPic" name="bookCoverPic" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: #333; font-weight: 500;">Description</label>
+                    <textarea id="editBookShortPreview" name="bookShortPreview" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; resize: vertical; min-height: 100px;"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" onclick="closeEditModal()" style="padding: 0.75rem 1.5rem; background-color: #ddd; color: #333; border: none; border-radius: 5px; cursor: pointer; font-size: 0.95rem;">Cancel</button>
+                    <button type="submit" style="padding: 0.75rem 1.5rem; background-color: #e67e22; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 0.95rem;">Update Book</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        #editModal[style*="display: flex"] {
+            display: flex !important;
+        }
+    </style>
+
     <script>
         function switchTab(event, tabName) {
-            event.preventDefault();
+            if (event) {
+                event.preventDefault();
+            }
+
+            console.log('Switching to tab:', tabName);
 
             // Hide all tab contents
             const contents = document.querySelectorAll('.tab-content');
@@ -476,8 +538,550 @@
             tabs.forEach(tab => tab.classList.remove('active'));
 
             // Show selected tab content and mark tab as active
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
+            const tabContent = document.getElementById(tabName);
+            if (tabContent) {
+                tabContent.classList.add('active');
+                console.log('Tab content activated:', tabName);
+            } else {
+                console.error('Tab content not found:', tabName);
+            }
+
+            // Find and activate the correct tab button
+            if (event && event.target) {
+                event.target.classList.add('active');
+                console.log('Tab button activated');
+            } else {
+                // If event is not available, find the button by onclick attribute
+                const tabButton = Array.from(tabs).find(tab =>
+                    tab.getAttribute('onclick') && tab.getAttribute('onclick').includes(`'${tabName}'`)
+                );
+                if (tabButton) {
+                    tabButton.classList.add('active');
+                    console.log('Tab button activated (programmatically)');
+                }
+            }
+
+            // Load my books when switching to that tab
+            if (tabName === 'my-books') {
+                loadSellerBooks();
+            }
+
+            // Load sales when switching to sales tab
+            if (tabName === 'sales') {
+                loadSalesData();
+            }
+
+            // Load pending requests when switching to requests tab
+            if (tabName === 'requests') {
+                loadPendingRequests();
+            }
+        }
+
+        // Handle add book form submission
+        async function handleAddBook(event) {
+            event.preventDefault();
+
+            const bookData = {
+                bookName: document.getElementById('bookName').value,
+                bookAuthor: document.getElementById('bookAuthor').value,
+                bookPrice: parseFloat(document.getElementById('bookPrice').value),
+                quantityLeft: parseInt(document.getElementById('quantityLeft').value),
+                bookCoverPic: document.getElementById('bookCoverPic').value,
+                bookShortPreview: document.getElementById('bookShortPreview').value
+            };
+
+            try {
+                const response = await fetch('/api/books/seller/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(bookData)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    alert('Book added successfully!');
+                    document.getElementById('addBookForm').reset();
+                    loadSellerBooks();
+                    updateDashboardStats();  // Update stats after adding book
+
+                    // Switch to My Books tab
+                    const myBooksTab = document.querySelector('[onclick*="my-books"]');
+                    if (myBooksTab) {
+                        const event = { preventDefault: () => {} };
+                        event.target = myBooksTab;
+                        switchTab(event, 'my-books');
+                    }
+                } else {
+                    const error = await response.json();
+                    alert('Error adding book: ' + (error.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error adding book: ' + error.message);
+            }
+        }
+
+        // Load seller's books
+        async function loadSellerBooks() {
+            try {
+                const response = await fetch('/api/books/seller/my-books');
+                const data = await response.json();
+
+                const booksGrid = document.querySelector('#my-books .books-grid');
+                booksGrid.innerHTML = '';
+
+                if (data.content && data.content.length > 0) {
+                    data.content.forEach(book => {
+                        const bookCard = createBookCard(book);
+                        booksGrid.appendChild(bookCard);
+                    });
+                } else {
+                    booksGrid.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;"><p>No books listed yet. Add your first book!</p></div>';
+                }
+
+                // Update stats after loading books
+                updateDashboardStats();
+            } catch (error) {
+                console.error('Error loading books:', error);
+                alert('Error loading books: ' + error.message);
+            }
+        }
+
+        // Create book card element
+        function createBookCard(book) {
+            const card = document.createElement('div');
+            card.className = 'book-card';
+            card.innerHTML = `
+                <div class="book-cover">${book.bookCoverPic ? `<img src="${book.bookCoverPic}" alt="${book.bookName}" style="width: 100%; height: 100%; object-fit: cover;">` : '📖'}</div>
+                <div class="book-info">
+                    <h3>${book.bookName}</h3>
+                    <p class="book-author">by ${book.bookAuthor}</p>
+                    <p class="book-price">$${book.bookPrice}</p>
+                    <p class="book-quantity">In Stock: ${book.quantityLeft}</p>
+                    <div class="book-actions">
+                        <button class="btn" onclick="editBook('${book.bookId}')">Edit</button>
+                        <button class="btn btn-danger" onclick="deleteBook('${book.bookId}')">Delete</button>
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        // Delete book
+        async function deleteBook(bookId) {
+            if (!confirm('Are you sure you want to delete this book?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/books/${bookId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    alert('Book deleted successfully!');
+                    loadSellerBooks();  // This will also update stats
+                    updateDashboardStats();  // Explicit update
+                } else {
+                    const error = await response.json();
+                    alert('Error deleting book: ' + (error.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error deleting book: ' + error.message);
+            }
+        }
+
+        // Edit book (show modal with book data)
+        async function editBook(bookId) {
+            try {
+                const response = await fetch(`/api/books/${bookId}`);
+                if (!response.ok) throw new Error('Failed to fetch book');
+
+                const book = await response.json();
+
+                // Populate modal with book data
+                document.getElementById('editBookName').value = book.bookName;
+                document.getElementById('editBookAuthor').value = book.bookAuthor;
+                document.getElementById('editBookPrice').value = book.bookPrice;
+                document.getElementById('editQuantityLeft').value = book.quantityLeft;
+                document.getElementById('editBookCoverPic').value = book.bookCoverPic || '';
+                document.getElementById('editBookShortPreview').value = book.bookShortPreview;
+
+                // Store book ID for update
+                document.getElementById('editBookForm').dataset.bookId = bookId;
+
+                // Show modal
+                document.getElementById('editModal').style.display = 'flex';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error loading book: ' + error.message);
+            }
+        }
+
+        // Close edit modal
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+            document.getElementById('editBookForm').reset();
+        }
+
+        // Handle edit book form submission
+        async function handleEditBook(event) {
+            event.preventDefault();
+
+            const bookId = document.getElementById('editBookForm').dataset.bookId;
+            const bookData = {
+                bookName: document.getElementById('editBookName').value,
+                bookAuthor: document.getElementById('editBookAuthor').value,
+                bookPrice: parseFloat(document.getElementById('editBookPrice').value),
+                quantityLeft: parseInt(document.getElementById('editQuantityLeft').value),
+                bookCoverPic: document.getElementById('editBookCoverPic').value,
+                bookShortPreview: document.getElementById('editBookShortPreview').value
+            };
+
+            try {
+                const response = await fetch(`/api/books/${bookId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(bookData)
+                });
+
+                if (response.ok) {
+                    alert('Book updated successfully!');
+                    closeEditModal();
+                    loadSellerBooks();
+                } else {
+                    const error = await response.json();
+                    alert('Error updating book: ' + (error.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error updating book: ' + error.message);
+            }
+        }
+
+        // Load available books
+        async function loadAvailableBooks() {
+            try {
+                const response = await fetch('/api/books');
+                const data = await response.json();
+
+                const booksContainer = document.querySelector('#browse-books .books-grid') || document.getElementById('browse-books');
+                if (booksContainer) {
+                    booksContainer.innerHTML = '';
+                    if (data.content && data.content.length > 0) {
+                        data.content.forEach(book => {
+                            const bookCard = createBrowseBookCard(book);
+                            booksContainer.appendChild(bookCard);
+                        });
+                    } else {
+                        booksContainer.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;"><p>No books available right now.</p></div>';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading available books:', error);
+            }
+        }
+
+        // Create browseable book card
+        function createBrowseBookCard(book) {
+            const card = document.createElement('div');
+            card.className = 'book-card';
+            card.innerHTML = `
+                <div class="book-cover">${book.bookCoverPic ? `<img src="${book.bookCoverPic}" alt="${book.bookName}" style="width: 100%; height: 100%; object-fit: cover;">` : '📖'}</div>
+                <div class="book-info">
+                    <h3>${book.bookName}</h3>
+                    <p class="book-author">by ${book.bookAuthor}</p>
+                    <p class="book-price">$${book.bookPrice}</p>
+                    <p class="book-quantity">In Stock: ${book.quantityLeft}</p>
+                    <div class="book-actions">
+                        <a href="/books/${book.bookId}" class="btn">View Details</a>
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+
+        // Load sold books for sales tab
+        async function loadSalesData() {
+            try {
+                const response = await fetch('/api/books/sold');
+                if (!response.ok) throw new Error('Failed to fetch sales data');
+
+                const sales = await response.json();
+                const salesGrid = document.querySelector('#sales .books-grid');
+                salesGrid.innerHTML = '';
+
+                if (sales && sales.length > 0) {
+                    sales.forEach(saleItem => {
+                        const book = saleItem.book;
+                        const card = document.createElement('div');
+                        card.className = 'book-card';
+                        card.innerHTML = `
+                            <div class="book-cover">${book.bookCoverPic ? `<img src="${book.bookCoverPic}" alt="${book.bookName}" style="width: 100%; height: 100%; object-fit: cover;">` : '📖'}</div>
+                            <div class="book-info">
+                                <h3>${book.bookName}</h3>
+                                <p class="book-author">by ${book.bookAuthor}</p>
+                                <p class="book-price">$${book.bookPrice}</p>
+                                <p style="font-size: 0.85rem; color: #666; margin: 0.5rem 0;"><strong>Buyer:</strong> ${saleItem.buyerUsername}</p>
+                                <p style="font-size: 0.85rem; color: #666; margin: 0.5rem 0;"><strong>Email:</strong> ${saleItem.buyerEmail}</p>
+                            </div>
+                        `;
+                        salesGrid.appendChild(card);
+                    });
+                } else {
+                    salesGrid.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;"><p>No sales yet. Keep adding books!</p></div>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                const salesGrid = document.querySelector('#sales .books-grid');
+                salesGrid.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;"><p>Error loading sales: ' + error.message + '</p></div>';
+            }
+        }
+
+        // Load pending book requests for seller
+        async function loadPendingRequests() {
+            try {
+                const response = await fetch('/api/book-requests/pending/all');
+                const requests = await response.json();
+                const requestsContainer = document.getElementById('requestsContainer');
+
+                requestsContainer.innerHTML = '';
+
+                if (requests && requests.length > 0) {
+                    requests.forEach(request => {
+                        const requestCard = document.createElement('div');
+                        requestCard.className = 'request-card';
+                        requestCard.style.cssText = `
+                            background: white;
+                            border: 1px solid #ddd;
+                            border-radius: 8px;
+                            padding: 1.5rem;
+                            margin-bottom: 1rem;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                            transition: box-shadow 0.3s ease;
+                        `;
+                        requestCard.onmouseover = function() {
+                            this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                        };
+                        requestCard.onmouseout = function() {
+                            this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                        };
+
+                        requestCard.innerHTML = `
+                            <div style="display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: start;">
+                                <div>
+                                    <h4 style="color: #2c3e50; margin: 0 0 0.5rem 0; font-size: 1.1rem;">${request.reqSubject}</h4>
+                                    <p style="color: #555; margin: 0.5rem 0; line-height: 1.5;">${request.reqDescription}</p>
+                                    <div style="margin-top: 1rem; font-size: 0.9rem; color: #666;">
+                                        <p style="margin: 0.25rem 0;"><strong>Requested by:</strong> ${request.buyerUsername}</p>
+                                        <p style="margin: 0.25rem 0;"><strong>Email:</strong> ${request.buyerEmail}</p>
+                                        <p style="margin: 0.25rem 0;"><strong>Posted:</strong> ${new Date(request.createdAt).toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                    <button onclick="fulfillRequest('${request.reqId}')" class="btn" style="background-color: #27ae60; padding: 0.75rem 1.5rem; white-space: nowrap;">
+                                        ✓ Fulfill
+                                    </button>
+                                    <button onclick="dismissRequest('${request.reqId}')" class="btn" style="background-color: #95a5a6; padding: 0.75rem 1.5rem; white-space: nowrap;">
+                                        Dismiss
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        requestsContainer.appendChild(requestCard);
+                    });
+                } else {
+                    requestsContainer.innerHTML = '<div class="empty-state" style="text-align: center; padding: 2rem; color: #999;"><p style="font-size: 1rem; margin: 0;">No pending requests at this time</p></div>';
+                }
+
+                // Update stats after loading requests
+                updateDashboardStats();
+            } catch (error) {
+                console.error('Error loading pending requests:', error);
+                const requestsContainer = document.getElementById('requestsContainer');
+                requestsContainer.innerHTML = '<div class="empty-state" style="color: red;"><p>Error loading requests: ' + error.message + '</p></div>';
+            }
+        }
+
+        // Fulfill a book request - with option to add book or fulfill directly
+        async function fulfillRequest(requestId) {
+            try {
+                const requestResponse = await fetch(`/api/book-requests/requests/${requestId}`);
+                const request = await requestResponse.json();
+
+                // Ask seller what they want to do
+                const choice = confirm(
+                    `Request: "${request.reqSubject}"\n\n` +
+                    `Buyer: ${request.buyerUsername}\n` +
+                    `Email: ${request.buyerEmail}\n\n` +
+                    `Click OK to DIRECTLY FULFILL this request.\n` +
+                    `(If the book already exists in your inventory)\n\n` +
+                    `Click CANCEL to ADD A NEW BOOK and then fulfill.\n` +
+                    `(If you need to add the book first)`
+                );
+
+                if (choice) {
+                    // User chose DIRECT FULFILL
+                    try {
+                        const fulfillResponse = await fetch(`/api/book-requests/requests/${requestId}/fulfill`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        });
+
+                        if (fulfillResponse.ok) {
+                            alert('✅ Request fulfilled successfully!\n\nThe buyer will be notified.');
+                            loadPendingRequests();  // This will also update stats
+                            updateDashboardStats();  // Explicit update
+                        } else {
+                            const error = await fulfillResponse.json();
+                            alert('Error: ' + (error.error || 'Failed to fulfill request'));
+                        }
+                    } catch (error) {
+                        console.error('Error fulfilling request:', error);
+                        alert('Error: ' + error.message);
+                    }
+                } else {
+                    // User chose ADD NEW BOOK
+                    // Pre-fill the add book form with request details
+                    document.getElementById('bookName').value = request.reqSubject;
+                    document.getElementById('bookShortPreview').value = request.reqDescription;
+
+                    // Switch to add book tab using switchTab function
+                    switchTab(null, 'add-book');
+
+                    // Show instructions
+                    alert(`Adding new book for "${request.reqSubject}" request.\n\n` +
+                        `Buyer: ${request.buyerUsername}\n` +
+                        `Email: ${request.buyerEmail}\n\n` +
+                        `The title and description have been pre-filled.\n` +
+                        `Fill in the remaining details and click "Add Book".`);
+
+                    // Store the request ID for later use if needed
+                    document.getElementById('addBookForm').dataset.requestId = requestId;
+                }
+            } catch (error) {
+                console.error('Error fulfilling request:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+
+        // Dismiss a request
+        async function dismissRequest(requestId) {
+            if (!confirm('Are you sure you want to dismiss this request? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/book-requests/requests/${requestId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    alert('✅ Request dismissed successfully!');
+                    loadPendingRequests();  // This will also update stats
+                    updateDashboardStats();  // Explicit update
+                } else {
+                    const error = await response.json();
+                    alert('Error dismissing request: ' + (error.error || error.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error dismissing request:', error);
+                alert('Error dismissing request: ' + error.message);
+            }
+        }
+
+        // Load initial data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSellerBooks();
+            updateDashboardStats();
+
+            // Load pending requests initially (if someone opens requests tab first)
+            // Use a small delay to ensure DOM is ready
+            setTimeout(function() {
+                console.log('Initial pending requests load after 500ms delay');
+                loadPendingRequests();
+            }, 500);
+
+            // Auto-refresh pending requests every 3 seconds if on requests tab
+            setInterval(function() {
+                const requestsTab = document.getElementById('requests');
+                if (requestsTab && requestsTab.classList.contains('active')) {
+                    console.log('Auto-refreshing pending requests (3s interval)');
+                    loadPendingRequests();
+                }
+            }, 3000);
+
+            // Auto-refresh dashboard stats every 5 seconds for real-time updates
+            setInterval(function() {
+                console.log('Auto-refreshing dashboard stats (5s interval)');
+                updateDashboardStats();
+            }, 5000);
+        });
+
+        // Refresh pending requests when page becomes visible (tab focus)
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                const requestsTab = document.getElementById('requests');
+                if (requestsTab && requestsTab.classList.contains('active')) {
+                    console.log('Page became visible, refreshing pending requests');
+                    loadPendingRequests();
+                }
+                // Also refresh stats when page becomes visible
+                console.log('Page became visible, refreshing stats');
+                updateDashboardStats();
+            }
+        });
+
+        // Update dashboard statistics
+        async function updateDashboardStats() {
+            try {
+                // Get my books count
+                const booksResponse = await fetch('/api/books/seller/my-books?page=0&size=1000');
+                const booksData = await booksResponse.json();
+                const totalBooks = booksData.totalElements || 0;
+
+                // Get sold books count
+                const soldResponse = await fetch('/api/books/sold');
+                const soldData = await soldResponse.json();
+                const booksSold = soldData.length || 0;
+
+                // Calculate total revenue
+                let totalRevenue = 0;
+                if (soldData && soldData.length > 0) {
+                    totalRevenue = soldData.reduce((sum, item) => sum + parseFloat(item.book.bookPrice || 0), 0);
+                }
+
+                // Get active requests count
+                const requestsResponse = await fetch('/api/book-requests/pending/all');
+                const requestsData = await requestsResponse.json();
+                const activeRequests = (requestsData && requestsData.length) ? requestsData.length : 0;
+
+                // Update stat cards
+                document.querySelectorAll('.stat-card').forEach((card, index) => {
+                    if (index === 0) {
+                        card.querySelector('.number').textContent = totalBooks;
+                    } else if (index === 1) {
+                        card.querySelector('.number').textContent = booksSold;
+                    } else if (index === 2) {
+                        card.querySelector('.number').textContent = '$' + totalRevenue.toFixed(2);
+                    } else if (index === 3) {
+                        card.querySelector('.number').textContent = activeRequests;
+                    }
+                });
+            } catch (error) {
+                console.error('Error updating stats:', error);
+            }
         }
     </script>
 </body>

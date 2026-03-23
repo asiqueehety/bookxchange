@@ -322,19 +322,15 @@
 
             <!-- Browse Books Tab -->
             <div id="browse" class="tab-content active">
-                <h3 style="color: #2c3e50; margin-bottom: 2rem;">Available Books</h3>
+                <div style="margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: center;">
+                    <h3 style="color: #2c3e50; margin: 0;">Available Books</h3>
+                    <input type="text" id="searchBooks" placeholder="Search books..." style="flex: 1; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 0.95rem;">
+                    <button onclick="searchAvailableBooks()" style="padding: 0.75rem 1.5rem; background-color: #e67e22; color: white; border: none; border-radius: 5px; cursor: pointer;">Search</button>
+                </div>
                 <div class="books-grid">
-                    <div class="book-card">
-                        <div class="book-cover">📖</div>
-                        <div class="book-info">
-                            <h3>The Great Gatsby</h3>
-                            <p class="book-author">by F. Scott Fitzgerald</p>
-                            <p class="book-price">$8.99</p>
-                            <p class="book-quantity">In Stock: 3</p>
-                            <button class="btn">Add to Cart</button>
-                        </div>
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <p>Loading books...</p>
                     </div>
-                    <!-- More books would be dynamically loaded here -->
                 </div>
             </div>
 
@@ -342,7 +338,7 @@
             <div id="requests" class="tab-content">
                 <div class="request-form">
                     <h3>Post a Book Request</h3>
-                    <form>
+                    <form id="bookRequestForm" onsubmit="handlePostRequest(event)">
                         <div class="form-group">
                             <label for="reqSubject">Book Title or Subject</label>
                             <input type="text" id="reqSubject" name="reqSubject" required>
@@ -355,7 +351,7 @@
                     </form>
                 </div>
 
-                <div>
+                <div id="buyerRequestsContainer">
                     <h3 style="color: #2c3e50; margin-bottom: 1.5rem;">Your Requests</h3>
                     <div class="empty-state">
                         <p>No requests posted yet</p>
@@ -374,8 +370,15 @@
     </div>
 
     <script>
+        // Current pagination state
+        let currentPage = 0;
+        let pageSize = 10;
+        let searchQuery = '';
+
         function switchTab(event, tabName) {
-            event.preventDefault();
+            if (event) {
+                event.preventDefault();
+            }
 
             // Hide all tab contents
             const contents = document.querySelectorAll('.tab-content');
@@ -386,9 +389,364 @@
             tabs.forEach(tab => tab.classList.remove('active'));
 
             // Show selected tab content and mark tab as active
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
+            const tabContent = document.getElementById(tabName);
+            if (tabContent) {
+                tabContent.classList.add('active');
+            }
+
+            // Find and activate the correct tab button
+            if (event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                // If event is not available, find the button by onclick attribute
+                const tabButton = Array.from(tabs).find(tab =>
+                    tab.getAttribute('onclick') && tab.getAttribute('onclick').includes(`'${tabName}'`)
+                );
+                if (tabButton) {
+                    tabButton.classList.add('active');
+                }
+            }
+
+            // Load books when Browse tab is clicked
+            if (tabName === 'browse') {
+                loadAvailableBooks();
+            }
+
+            // Load purchases when Purchases tab is clicked
+            if (tabName === 'purchases') {
+                loadPurchasedBooks();
+            }
+
+            // Load requests when Requests tab is clicked
+            if (tabName === 'requests') {
+                loadBuyerRequests();
+            }
         }
+
+        // Load available books from API
+        async function loadAvailableBooks() {
+            try {
+                const url = searchQuery
+                    ? `/api/books/search?query=${encodeURIComponent(searchQuery)}&page=${currentPage}&size=${pageSize}`
+                    : `/api/books?page=${currentPage}&size=${pageSize}`;
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Failed to fetch books');
+
+                const data = await response.json();
+                const booksGrid = document.querySelector('#browse .books-grid');
+                booksGrid.innerHTML = '';
+
+                if (data.content && data.content.length > 0) {
+                    data.content.forEach(book => {
+                        const card = createBookCard(book);
+                        booksGrid.appendChild(card);
+                    });
+
+                    // Add pagination if there are more pages
+                    if (data.totalPages > 1) {
+                        const paginationDiv = document.createElement('div');
+                        paginationDiv.style.cssText = 'grid-column: 1/-1; display: flex; justify-content: center; gap: 0.5rem; margin-top: 2rem;';
+
+                        // Previous button
+                        if (currentPage > 0) {
+                            const prevBtn = document.createElement('button');
+                            prevBtn.textContent = '← Previous';
+                            prevBtn.style.cssText = 'padding: 0.75rem 1.5rem; background-color: #e67e22; color: white; border: none; border-radius: 5px; cursor: pointer;';
+                            prevBtn.onclick = () => { currentPage--; loadAvailableBooks(); };
+                            paginationDiv.appendChild(prevBtn);
+                        }
+
+                        // Page info
+                        const pageInfo = document.createElement('span');
+                        pageInfo.textContent = `Page ${currentPage + 1} of ${data.totalPages}`;
+                        pageInfo.style.cssText = 'padding: 0.75rem 1.5rem; background-color: #f0f0f0; border-radius: 5px;';
+                        paginationDiv.appendChild(pageInfo);
+
+                        // Next button
+                        if (currentPage < data.totalPages - 1) {
+                            const nextBtn = document.createElement('button');
+                            nextBtn.textContent = 'Next →';
+                            nextBtn.style.cssText = 'padding: 0.75rem 1.5rem; background-color: #e67e22; color: white; border: none; border-radius: 5px; cursor: pointer;';
+                            nextBtn.onclick = () => { currentPage++; loadAvailableBooks(); };
+                            paginationDiv.appendChild(nextBtn);
+                        }
+
+                        booksGrid.appendChild(paginationDiv);
+                    }
+                } else {
+                    booksGrid.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;"><p>No books available at this time.</p></div>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                const booksGrid = document.querySelector('#browse .books-grid');
+                booksGrid.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;"><p>Error loading books: ' + error.message + '</p></div>';
+            }
+        }
+
+        // Create book card element
+        function createBookCard(book) {
+            const card = document.createElement('div');
+            card.className = 'book-card';
+            card.innerHTML = `
+                <div class="book-cover">${book.bookCoverPic ? `<img src="${book.bookCoverPic}" alt="${book.bookName}" style="width: 100%; height: 100%; object-fit: cover;">` : '📖'}</div>
+                <div class="book-info">
+                    <h3>${book.bookName}</h3>
+                    <p class="book-author">by ${book.bookAuthor}</p>
+                    <p class="book-price">$${book.bookPrice}</p>
+                    <p class="book-quantity">In Stock: ${book.quantityLeft}</p>
+                    <p style="font-size: 0.85rem; color: #666; margin: 0.5rem 0;">Seller: ${book.sellerUsername || 'Unknown'}</p>
+                    <div class="book-actions">
+                        <a href="/books/${book.bookId}" class="btn" style="display: inline-block; text-decoration: none; text-align: center; flex: 1;">View Details</a>
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        // Search books
+        function searchAvailableBooks() {
+            searchQuery = document.getElementById('searchBooks').value;
+            currentPage = 0;
+            loadAvailableBooks();
+        }
+
+        // Load purchased books from API
+        async function loadPurchasedBooks() {
+            try {
+                const response = await fetch('/api/books/purchases');
+                if (!response.ok) throw new Error('Failed to fetch purchases');
+
+                const purchases = await response.json();
+                const purchasesDiv = document.querySelector('#purchases');
+
+                // Clear ALL existing child content (including initial empty state)
+                // Only keep the h3 title
+                const title = purchasesDiv.querySelector('h3');
+                purchasesDiv.innerHTML = '';
+                if (title) {
+                    purchasesDiv.appendChild(title);
+                }
+
+                if (purchases && purchases.length > 0) {
+                    const booksGrid = document.createElement('div');
+                    booksGrid.className = 'books-grid';
+
+                    purchases.forEach(purchase => {
+                        const book = purchase.book;
+                        const card = document.createElement('div');
+                        card.className = 'book-card';
+                        card.innerHTML = `
+                            <div class="book-cover">${book.bookCoverPic ? `<img src="${book.bookCoverPic}" alt="${book.bookName}" style="width: 100%; height: 100%; object-fit: cover;">` : '📖'}</div>
+                            <div class="book-info">
+                                <h3>${book.bookName}</h3>
+                                <p class="book-author">by ${book.bookAuthor}</p>
+                                <p class="book-price">$${book.bookPrice}</p>
+                                <p style="font-size: 0.85rem; color: #666; margin: 0.5rem 0;">Seller: ${purchase.sellerUsername || 'Unknown'}</p>
+                                <div class="book-actions">
+                                    <a href="/books/${book.bookId}" class="btn" style="display: inline-block; text-decoration: none; text-align: center; flex: 1;">View Book</a>
+                                </div>
+                            </div>
+                        `;
+                        booksGrid.appendChild(card);
+                    });
+
+                    purchasesDiv.appendChild(booksGrid);
+                } else {
+                    const emptyState = document.createElement('div');
+                    emptyState.className = 'empty-state';
+                    emptyState.innerHTML = '<p>No purchases yet. Start browsing books!</p>';
+                    purchasesDiv.appendChild(emptyState);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                const purchasesDiv = document.querySelector('#purchases');
+
+                // Clear ALL existing content
+                const title = purchasesDiv.querySelector('h3');
+                purchasesDiv.innerHTML = '';
+                if (title) {
+                    purchasesDiv.appendChild(title);
+                }
+
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'empty-state';
+                errorDiv.innerHTML = '<p>Error loading purchases: ' + error.message + '</p>';
+                purchasesDiv.appendChild(errorDiv);
+            }
+        }
+
+        // Handle posting a new book request
+        async function handlePostRequest(event) {
+            event.preventDefault();
+
+            const reqSubject = document.getElementById('reqSubject').value;
+            const reqDescription = document.getElementById('reqDescription').value;
+
+            try {
+                const response = await fetch('/api/book-requests/buyer/requests', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        reqSubject: reqSubject,
+                        reqDescription: reqDescription
+                    })
+                });
+
+                if (response.ok) {
+                    alert('Request posted successfully!');
+                    document.getElementById('bookRequestForm').reset();
+                    loadBuyerRequests();
+                } else {
+                    const error = await response.json();
+                    alert('Error posting request: ' + (error.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error posting request: ' + error.message);
+            }
+        }
+
+        // Load buyer's own book requests
+        async function loadBuyerRequests() {
+            try {
+                const response = await fetch('/api/book-requests/buyer/requests');
+                const requests = await response.json();
+                const container = document.getElementById('buyerRequestsContainer');
+
+                // Clear existing content but keep title
+                const existing = container.querySelector('.empty-state');
+                if (existing) {
+                    existing.remove();
+                }
+                const existingGrid = container.querySelector('.requests-grid');
+                if (existingGrid) {
+                    existingGrid.remove();
+                }
+
+                if (requests && requests.content && requests.content.length > 0) {
+                    const requestsGrid = document.createElement('div');
+                    requestsGrid.className = 'requests-grid';
+                    requestsGrid.style.cssText = 'display: grid; gap: 1rem;';
+
+                    requests.content.forEach(request => {
+                        const requestCard = document.createElement('div');
+                        requestCard.style.cssText = `
+                            background: white;
+                            border-left: 4px solid ${request.reqFulfillerUsername ? '#27ae60' : '#e67e22'};
+                            padding: 1.5rem;
+                            border-radius: 5px;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        `;
+
+                        const statusBadge = request.reqFulfillerUsername
+                            ? `<span style="display: inline-block; background-color: #27ae60; color: white; padding: 0.25rem 0.75rem; border-radius: 3px; font-size: 0.85rem; margin-left: 0.5rem;">✓ Fulfilled</span>`
+                            : `<span style="display: inline-block; background-color: #e67e22; color: white; padding: 0.25rem 0.75rem; border-radius: 3px; font-size: 0.85rem; margin-left: 0.5rem;">⏳ Pending</span>`;
+
+                        const dismissButton = !request.reqFulfillerUsername
+                            ? `<button onclick="dismissBuyerRequest('${request.reqId}')" style="background-color: #e74c3c; color: white; padding: 0.5rem 1rem; border: none; border-radius: 5px; cursor: pointer; font-size: 0.9rem; margin-top: 0.5rem;">Dismiss Request</button>`
+                            : '';
+
+                        requestCard.innerHTML = `
+                            <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
+                                <div style="flex: 1;">
+                                    <h4 style="color: #2c3e50; margin: 0 0 0.5rem 0;">${request.reqSubject}${statusBadge}</h4>
+                                    <p style="color: #555; margin: 0.5rem 0; line-height: 1.5;">${request.reqDescription}</p>
+                                    <div style="margin-top: 1rem; font-size: 0.9rem; color: #666;">
+                                        <p style="margin: 0.25rem 0;"><strong>Posted:</strong> ${new Date(request.createdAt).toLocaleDateString()}</p>
+                                        ${request.reqFulfillerUsername ? `<p style="margin: 0.25rem 0;"><strong>Fulfilled by:</strong> ${request.reqFulfillerUsername}</p>` : ''}
+                                    </div>
+                                    ${dismissButton}
+                                </div>
+                            </div>
+                        `;
+                        requestsGrid.appendChild(requestCard);
+                    });
+                    container.appendChild(requestsGrid);
+                } else {
+                    const emptyState = document.createElement('div');
+                    emptyState.className = 'empty-state';
+                    emptyState.innerHTML = '<p>No requests posted yet</p>';
+                    container.appendChild(emptyState);
+                }
+            } catch (error) {
+                console.error('Error loading requests:', error);
+                const container = document.getElementById('buyerRequestsContainer');
+                const existing = container.querySelector('.empty-state');
+                if (existing) {
+                    existing.remove();
+                }
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'empty-state';
+                errorDiv.innerHTML = '<p>Error loading requests: ' + error.message + '</p>';
+                container.appendChild(errorDiv);
+            }
+        }
+
+        // Dismiss a buyer's own request
+        async function dismissBuyerRequest(requestId) {
+            const confirmMsg = 'Are you sure you want to dismiss this request?';
+            if (!confirm(confirmMsg)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/book-requests/requests/${requestId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    alert('Request dismissed successfully.');
+                    loadBuyerRequests();
+                } else {
+                    const error = await response.json();
+                    alert('Error dismissing request: ' + (error.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error dismissing request: ' + error.message);
+            }
+        }
+
+        // Load books on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAvailableBooks();
+
+            // Auto-refresh requests every 5 seconds if on requests tab
+            setInterval(function() {
+                const requestsTab = document.getElementById('requests');
+                if (requestsTab && requestsTab.classList.contains('active')) {
+                    loadBuyerRequests();
+                }
+            }, 5000);
+        });
+
+        // Refresh requests when page becomes visible (tab focus)
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                const requestsTab = document.getElementById('requests');
+                if (requestsTab && requestsTab.classList.contains('active')) {
+                    loadBuyerRequests();
+                }
+            }
+        });
+
+        // Allow Enter key in search
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchBooks');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        searchAvailableBooks();
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>
