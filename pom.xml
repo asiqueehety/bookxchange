@@ -57,6 +57,7 @@
 		<dependency>
 			<groupId>org.springframework.session</groupId>
 			<artifactId>spring-session-jdbc</artifactId>
+			<scope>runtime</scope>
 		</dependency>
 
 		<dependency>
