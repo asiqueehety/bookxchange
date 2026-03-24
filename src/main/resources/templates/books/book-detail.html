@@ -428,10 +428,13 @@
                     </div>
 
                     <!-- Action Buttons -->
-                    <div th:if="${book.quantityLeft > 0}" class="action-buttons">
+                    <div th:if="${book.quantityLeft > 0 && !isOwnBook}" class="action-buttons">
                         <button onclick="buyNow()" class="btn-secondary-custom">
                             <i class="fas fa-bolt"></i> Buy Now
                         </button>
+                    </div>
+                    <div th:if="${isOwnBook}" class="out-of-stock" style="background-color: #f59e0b; border-left-color: #f59e0b;">
+                        <i class="fas fa-info-circle"></i> You cannot purchase your own book
                     </div>
                     <div th:unless="${book.quantityLeft > 0}" class="out-of-stock">
                         This book is currently out of stock

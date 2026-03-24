@@ -286,7 +286,10 @@
 <body>
     <nav>
         <div class="container">
-            <h1>📚 BookXchange</h1>
+            <a class="navbar-brand" href="/dashboard">
+                <h1>📚 BookXchange</h1>
+            </a>
+
             <div class="nav-right">
                 <span th:text="'Welcome, ' + ${user.username}"></span>
                 <a href="/user/profile" style="color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 5px; background-color: #27ae60; transition: background-color 0.3s;" onmouseover="this.style.backgroundColor='#229954'" onmouseout="this.style.backgroundColor='#27ae60'">Profile</a>
