@@ -50,17 +50,8 @@ jobs:
           PGPASSWORD=postgres psql -h localhost -U postgres -d bookxchange -f src/main/resources/db/init.sql
         continue-on-error: true
 
-      - name: Run unit tests
-        run: ./mvnw test -DskipITs=true
-        env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/bookxchange
-          SPRING_DATASOURCE_USERNAME: postgres
-          SPRING_DATASOURCE_PASSWORD: postgres
-          SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
-          SPRING_PROFILES_ACTIVE: test
-
-      - name: Run integration tests
-        run: ./mvnw verify -DskipUnitTests=true -DskipTests=false
+      - name: Run all tests (unit and integration)
+        run: ./mvnw clean verify
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/bookxchange
           SPRING_DATASOURCE_USERNAME: postgres
@@ -72,16 +63,8 @@ jobs:
         if: always()
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
-          files: target/surefire-reports/*.xml
-          check_name: Unit Test Results
-          comment_mode: off
-
-      - name: Publish integration test results
-        if: always()
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        with:
-          files: target/failsafe-reports/**/TEST-*.xml
-          check_name: Integration Test Results
+          files: target/surefire-reports/TEST-*.xml
+          check_name: Test Results
           comment_mode: off
 
       - name: Upload test artifacts
