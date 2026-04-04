@@ -10,6 +10,9 @@ COPY mvnw.cmd .
 COPY .mvn .mvn
 COPY src src
 
+# Make mvnw executable
+RUN chmod +x ./mvnw
+
 # Build the project
 RUN ./mvnw clean package -DskipTests
 
