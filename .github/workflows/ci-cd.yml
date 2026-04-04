@@ -43,22 +43,57 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Build and test
-        run: ./mvnw clean verify
+      - name: Initialize database schema
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          PGPASSWORD=postgres psql -h localhost -U postgres -d bookxchange -f src/main/resources/db/init.sql
+        continue-on-error: true
+
+      - name: Run unit tests
+        run: ./mvnw test -DskipITs=true
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/bookxchange
           SPRING_DATASOURCE_USERNAME: postgres
           SPRING_DATASOURCE_PASSWORD: postgres
           SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+          SPRING_PROFILES_ACTIVE: test
+
+      - name: Run integration tests
+        run: ./mvnw verify -DskipUnitTests=true -DskipTests=false
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/bookxchange
+          SPRING_DATASOURCE_USERNAME: postgres
+          SPRING_DATASOURCE_PASSWORD: postgres
+          SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+          SPRING_PROFILES_ACTIVE: test
 
       - name: Publish test results
         if: always()
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: target/surefire-reports/*.xml
+          check_name: Unit Test Results
           comment_mode: off
 
-      - name: Upload artifacts
+      - name: Publish integration test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: target/failsafe-reports/*.xml
+          check_name: Integration Test Results
+          comment_mode: off
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            target/surefire-reports/
+            target/failsafe-reports/
+
+      - name: Upload jar artifact
         if: success()
         uses: actions/upload-artifact@v4
         with:
