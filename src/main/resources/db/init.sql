@@ -1,6 +1,28 @@
 -- BookXchange Database Initialization Script
--- JPA DDL generation will handle table creation automatically
--- This file is for reference only
+
+-- Spring Session JDBC Tables for Session Management
+CREATE TABLE IF NOT EXISTS SPRING_SESSION (
+    PRIMARY_ID CHAR(36) NOT NULL,
+    SESSION_ID CHAR(36) NOT NULL,
+    CREATION_TIME BIGINT NOT NULL,
+    LAST_ACCESS_TIME BIGINT NOT NULL,
+    MAX_INACTIVE_INTERVAL INT NOT NULL,
+    EXPIRY_TIME BIGINT NOT NULL,
+    PRINCIPAL_NAME VARCHAR(100),
+    PRIMARY KEY (PRIMARY_ID),
+    UNIQUE (SESSION_ID)
+);
+
+CREATE TABLE IF NOT EXISTS SPRING_SESSION_ATTRIBUTES (
+    SESSION_PRIMARY_ID CHAR(36) NOT NULL,
+    ATTRIBUTE_NAME VARCHAR(200) NOT NULL,
+    ATTRIBUTE_BYTES BYTEA NOT NULL,
+    PRIMARY KEY (SESSION_PRIMARY_ID, ATTRIBUTE_NAME),
+    FOREIGN KEY (SESSION_PRIMARY_ID) REFERENCES SPRING_SESSION(PRIMARY_ID) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS SPRING_SESSION_IX_EXPIRY_TIME on SPRING_SESSION(EXPIRY_TIME);
+CREATE INDEX IF NOT EXISTS SPRING_SESSION_IX_PRINCIPAL_NAME on SPRING_SESSION(PRINCIPAL_NAME);
 
 -- Note: The following tables are automatically created by Hibernate/JPA:
 -- - users (with UUID primary key)
@@ -9,4 +31,3 @@
 -- - sold_books (with UUID primary key)
 
 -- Indexes are created by JPA annotations
--- Default users are inserted after table creation via data.sql or application startup
