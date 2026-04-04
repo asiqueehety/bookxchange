@@ -80,7 +80,7 @@ jobs:
         if: always()
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
-          files: target/failsafe-reports/*.xml
+          files: target/failsafe-reports/**/TEST-*.xml
           check_name: Integration Test Results
           comment_mode: off
 
