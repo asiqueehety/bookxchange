@@ -325,19 +325,19 @@
             <div class="stats">
                 <div class="stat-card">
                     <h4>Total Users</h4>
-                    <div class="number">0</div>
+                    <div class="number" id="statTotalUsers">0</div>
                 </div>
                 <div class="stat-card">
                     <h4>Total Books</h4>
-                    <div class="number">0</div>
+                    <div class="number" id="statTotalBooks">0</div>
                 </div>
                 <div class="stat-card">
                     <h4>Total Sales</h4>
-                    <div class="number">0</div>
+                    <div class="number" id="statTotalSales">0</div>
                 </div>
                 <div class="stat-card">
                     <h4>Active Requests</h4>
-                    <div class="number">0</div>
+                    <div class="number" id="statActiveRequests">0</div>
                 </div>
             </div>
 
@@ -351,9 +351,10 @@
             <!-- Manage Users Tab -->
             <div id="users" class="tab-content active">
                 <div class="search-box">
-                    <input type="text" placeholder="Search users by username or email...">
+                    <input type="text" id="adminSearchUsers" placeholder="Search users by username or email...">
+                    <button onclick="searchAdminUsers()" class="btn btn-primary" style="margin-top: 1rem;">Search</button>
                 </div>
-                <table>
+                <table id="usersTable">
                     <thead>
                         <tr>
                             <th>Username</th>
@@ -363,16 +364,9 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>john_doe</td>
-                            <td>john@example.com</td>
-                            <td><span class="user-badge badge-buyer">BUYER</span></td>
-                            <td>2026-01-15</td>
-                            <td>
-                                <button class="btn btn-primary">Edit</button>
-                                <button class="btn">Delete</button>
-                            </td>
+                    <tbody id="usersTableBody">
+                        <tr style="text-align: center;">
+                            <td colspan="5">Loading users...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -406,7 +400,7 @@
 
             <!-- Book Requests Tab -->
             <div id="requests" class="tab-content">
-                <table>
+                <table id="requestsTable">
                     <thead>
                         <tr>
                             <th>Request Subject</th>
@@ -416,12 +410,12 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="requestsTableBody">
+                        <tr style="text-align: center;">
+                            <td colspan="5">Loading requests...</td>
+                        </tr>
                     </tbody>
                 </table>
-                <div class="empty-state">
-                    <p>No book requests found</p>
-                </div>
             </div>
 
             <!-- Reports Tab -->
@@ -445,6 +439,20 @@
         let adminCurrentPage = 0;
         let adminPageSize = 20;
         let adminSearchQuery = '';
+        let adminSearchUsers = '';
+
+        // Load stats on page load
+        function loadAdminStats() {
+            fetch('/api/admin/stats')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('statTotalUsers').textContent = data.totalUsers || 0;
+                    document.getElementById('statTotalBooks').textContent = data.totalBooks || 0;
+                    document.getElementById('statTotalSales').textContent = data.totalSales || 0;
+                    document.getElementById('statActiveRequests').textContent = data.activeRequests || 0;
+                })
+                .catch(error => console.error('Error loading stats:', error));
+        }
 
         function switchTab(event, tabName) {
             if (event) {
@@ -478,13 +486,94 @@
                 }
             }
 
-            // Load books when Manage Books tab is clicked
-            if (tabName === 'books') {
+            // Load data when tabs are switched
+            if (tabName === 'users') {
+                loadAdminUsers();
+            } else if (tabName === 'books') {
                 loadAdminBooks();
+            } else if (tabName === 'requests') {
+                loadAdminRequests();
             }
         }
 
-        // Load all books for admin (including out of stock)
+        // Load all users
+        async function loadAdminUsers() {
+            try {
+                const url = adminSearchUsers
+                    ? `/api/admin/users?search=${encodeURIComponent(adminSearchUsers)}&page=${adminCurrentPage}&size=${adminPageSize}`
+                    : `/api/admin/users?page=${adminCurrentPage}&size=${adminPageSize}`;
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Failed to fetch users');
+
+                const data = await response.json();
+                const tbody = document.getElementById('usersTableBody');
+                tbody.innerHTML = '';
+
+                if (data.content && data.content.length > 0) {
+                    data.content.forEach(user => {
+                        const row = createUserRow(user);
+                        tbody.appendChild(row);
+                    });
+
+                    // Add pagination row
+                    if (data.totalPages > 1) {
+                        const paginationRow = document.createElement('tr');
+                        paginationRow.style.cssText = 'background-color: #f9f9f9; border-top: 2px solid #ddd;';
+
+                        let paginationHTML = '<td colspan="5" style="padding: 1rem; text-align: center; display: flex; justify-content: center; gap: 1rem;">';
+
+                        if (adminCurrentPage > 0) {
+                            paginationHTML += '<button class="btn btn-primary" onclick="adminUserPrevPage()" style="padding: 0.5rem 1rem;">← Previous</button>';
+                        }
+
+                        paginationHTML += `<span style="padding: 0.5rem 1rem; background-color: #fff; border-radius: 5px;">Page ${adminCurrentPage + 1} of ${data.totalPages}</span>`;
+
+                        if (adminCurrentPage < data.totalPages - 1) {
+                            paginationHTML += '<button class="btn btn-primary" onclick="adminUserNextPage()" style="padding: 0.5rem 1rem;">Next →</button>';
+                        }
+
+                        paginationHTML += '</td>';
+                        paginationRow.innerHTML = paginationHTML;
+                        tbody.appendChild(paginationRow);
+                    }
+                } else {
+                    const row = document.createElement('tr');
+                    row.innerHTML = '<td colspan="5" style="text-align: center; padding: 2rem; color: #999;">No users found</td>';
+                    tbody.appendChild(row);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                const tbody = document.getElementById('usersTableBody');
+                tbody.innerHTML = '<tr style="text-align: center;"><td colspan="5" style="padding: 1rem; color: #c0392b;">Error loading users: ' + error.message + '</td></tr>';
+            }
+        }
+
+        // Create user table row
+        function createUserRow(user) {
+            const row = document.createElement('tr');
+            const joinedDate = new Date(user.dateJoined).toLocaleDateString();
+
+            // Determine badge color based on role
+            let badgeClass = 'badge-buyer';
+            if (user.userRole === 'ADMIN') badgeClass = 'badge-admin';
+            else if (user.userRole === 'SELLER') badgeClass = 'badge-seller';
+
+            row.innerHTML = `
+                <td>${user.username}</td>
+                <td>${user.userEmail}</td>
+                <td><span class="user-badge ${badgeClass}">${user.userRole}</span></td>
+                <td>${joinedDate}</td>
+                <td>
+                    <button class="btn btn-primary" onclick="editUser('${user.uid}')" style="padding: 0.5rem 1rem; font-size: 0.85rem; display: inline-block; margin: 0.25rem;">Edit</button>
+                    <button class="btn" onclick="deleteUser('${user.uid}')" style="padding: 0.5rem 1rem; font-size: 0.85rem; display: inline-block; margin: 0.25rem;">Delete</button>
+                </td>
+            `;
+
+            return row;
+        }
+
+        // Load all books for admin
         async function loadAdminBooks() {
             try {
                 const url = adminSearchQuery
@@ -512,13 +601,13 @@
                         let paginationHTML = '<td colspan="7" style="padding: 1rem; text-align: center; display: flex; justify-content: center; gap: 1rem;">';
 
                         if (adminCurrentPage > 0) {
-                            paginationHTML += '<button class="btn btn-primary" onclick="adminPrevPage()" style="padding: 0.5rem 1rem;">← Previous</button>';
+                            paginationHTML += '<button class="btn btn-primary" onclick="adminBookPrevPage()" style="padding: 0.5rem 1rem;">← Previous</button>';
                         }
 
                         paginationHTML += `<span style="padding: 0.5rem 1rem; background-color: #fff; border-radius: 5px;">Page ${adminCurrentPage + 1} of ${data.totalPages}</span>`;
 
                         if (adminCurrentPage < data.totalPages - 1) {
-                            paginationHTML += '<button class="btn btn-primary" onclick="adminNextPage()" style="padding: 0.5rem 1rem;">Next →</button>';
+                            paginationHTML += '<button class="btn btn-primary" onclick="adminBookNextPage()" style="padding: 0.5rem 1rem;">Next →</button>';
                         }
 
                         paginationHTML += '</td>';
@@ -551,10 +640,86 @@
                 <td>${createdDate}</td>
                 <td>
                     <a href="/books/${book.bookId}" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem; display: inline-block; margin: 0.25rem;">View</a>
+                    <button class="btn" onclick="deleteBook('${book.bookId}')" style="padding: 0.5rem 1rem; font-size: 0.85rem; display: inline-block; margin: 0.25rem;">Delete</button>
                 </td>
             `;
 
             return row;
+        }
+
+        // Load all book requests
+        async function loadAdminRequests() {
+            try {
+                const url = `/api/admin/requests?page=${adminCurrentPage}&size=${adminPageSize}`;
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Failed to fetch requests');
+
+                const data = await response.json();
+                const tbody = document.getElementById('requestsTableBody');
+                tbody.innerHTML = '';
+
+                if (data.content && data.content.length > 0) {
+                    data.content.forEach(req => {
+                        const row = createRequestRow(req);
+                        tbody.appendChild(row);
+                    });
+
+                    // Add pagination row
+                    if (data.totalPages > 1) {
+                        const paginationRow = document.createElement('tr');
+                        paginationRow.style.cssText = 'background-color: #f9f9f9; border-top: 2px solid #ddd;';
+
+                        let paginationHTML = '<td colspan="5" style="padding: 1rem; text-align: center; display: flex; justify-content: center; gap: 1rem;">';
+
+                        if (adminCurrentPage > 0) {
+                            paginationHTML += '<button class="btn btn-primary" onclick="adminRequestPrevPage()" style="padding: 0.5rem 1rem;">← Previous</button>';
+                        }
+
+                        paginationHTML += `<span style="padding: 0.5rem 1rem; background-color: #fff; border-radius: 5px;">Page ${adminCurrentPage + 1} of ${data.totalPages}</span>`;
+
+                        if (adminCurrentPage < data.totalPages - 1) {
+                            paginationHTML += '<button class="btn btn-primary" onclick="adminRequestNextPage()" style="padding: 0.5rem 1rem;">Next →</button>';
+                        }
+
+                        paginationHTML += '</td>';
+                        paginationRow.innerHTML = paginationHTML;
+                        tbody.appendChild(paginationRow);
+                    }
+                } else {
+                    const row = document.createElement('tr');
+                    row.innerHTML = '<td colspan="5" style="text-align: center; padding: 2rem; color: #999;">No book requests found</td>';
+                    tbody.appendChild(row);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                const tbody = document.getElementById('requestsTableBody');
+                tbody.innerHTML = '<tr style="text-align: center;"><td colspan="5" style="padding: 1rem; color: #c0392b;">Error loading requests: ' + error.message + '</td></tr>';
+            }
+        }
+
+        // Create request table row
+        function createRequestRow(req) {
+            const row = document.createElement('tr');
+
+            row.innerHTML = `
+                <td>${req.reqSubject}</td>
+                <td>${req.buyerUsername}</td>
+                <td>${req.fulfillerUsername}</td>
+                <td><span class="user-badge ${req.status === 'Fulfilled' ? 'badge-seller' : 'badge-buyer'}">${req.status}</span></td>
+                <td>
+                    <button class="btn" onclick="deleteRequest('${req.reqId}')" style="padding: 0.5rem 1rem; font-size: 0.85rem; display: inline-block; margin: 0.25rem;">Delete</button>
+                </td>
+            `;
+
+            return row;
+        }
+
+        // Search admin users
+        function searchAdminUsers() {
+            adminSearchUsers = document.getElementById('adminSearchUsers').value;
+            adminCurrentPage = 0;
+            loadAdminUsers();
         }
 
         // Search admin books
@@ -564,31 +729,149 @@
             loadAdminBooks();
         }
 
-        // Admin pagination
-        function adminNextPage() {
+        // Admin pagination for users
+        function adminUserNextPage() {
+            adminCurrentPage++;
+            loadAdminUsers();
+        }
+
+        function adminUserPrevPage() {
+            adminCurrentPage--;
+            loadAdminUsers();
+        }
+
+        // Admin pagination for books
+        function adminBookNextPage() {
             adminCurrentPage++;
             loadAdminBooks();
         }
 
-        function adminPrevPage() {
+        function adminBookPrevPage() {
             adminCurrentPage--;
             loadAdminBooks();
         }
 
-        // Load books on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Only load if books tab is visible
-            const booksTab = document.getElementById('books');
-            if (booksTab && booksTab.classList.contains('active')) {
-                loadAdminBooks();
-            }
-        });
+        // Admin pagination for requests
+        function adminRequestNextPage() {
+            adminCurrentPage++;
+            loadAdminRequests();
+        }
 
-        // Allow Enter key in search
+        function adminRequestPrevPage() {
+            adminCurrentPage--;
+            loadAdminRequests();
+        }
+
+        // Delete user
+        function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                fetch(`/api/admin/users/${userId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert('User deleted successfully');
+                        adminCurrentPage = 0;
+                        loadAdminUsers();
+                        loadAdminStats();
+                    } else {
+                        return response.json().then(data => {
+                            alert('Error: ' + (data.error || 'Failed to delete user'));
+                        });
+                    }
+                })
+                .catch(error => alert('Error: ' + error.message));
+            }
+        }
+
+        // Edit user
+        function editUser(userId) {
+            const newRole = prompt('Enter new role (ADMIN, SELLER, BUYER):');
+            if (newRole) {
+                fetch(`/api/admin/users/${userId}/role`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ role: newRole })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert('User role updated successfully');
+                        loadAdminUsers();
+                        loadAdminStats();
+                    } else {
+                        return response.json().then(data => {
+                            alert('Error: ' + (data.error || 'Failed to update user'));
+                        });
+                    }
+                })
+                .catch(error => alert('Error: ' + error.message));
+            }
+        }
+
+        // Delete book
+        function deleteBook(bookId) {
+            if (confirm('Are you sure you want to delete this book?')) {
+                fetch(`/api/admin/books/${bookId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Book deleted successfully');
+                        adminCurrentPage = 0;
+                        loadAdminBooks();
+                        loadAdminStats();
+                    } else {
+                        return response.json().then(data => {
+                            alert('Error: ' + (data.error || 'Failed to delete book'));
+                        });
+                    }
+                })
+                .catch(error => alert('Error: ' + error.message));
+            }
+        }
+
+        // Delete request
+        function deleteRequest(requestId) {
+            if (confirm('Are you sure you want to delete this request?')) {
+                fetch(`/api/admin/requests/${requestId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Request deleted successfully');
+                        adminCurrentPage = 0;
+                        loadAdminRequests();
+                        loadAdminStats();
+                    } else {
+                        return response.json().then(data => {
+                            alert('Error: ' + (data.error || 'Failed to delete request'));
+                        });
+                    }
+                })
+                .catch(error => alert('Error: ' + error.message));
+            }
+        }
+
+        // Load stats and users on page load
         document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('adminSearchBooks');
-            if (searchInput) {
-                searchInput.addEventListener('keypress', function(e) {
+            loadAdminStats();
+            loadAdminUsers();
+
+            // Allow Enter key in search
+            const searchUsersInput = document.getElementById('adminSearchUsers');
+            if (searchUsersInput) {
+                searchUsersInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        searchAdminUsers();
+                    }
+                });
+            }
+
+            const searchBooksInput = document.getElementById('adminSearchBooks');
+            if (searchBooksInput) {
+                searchBooksInput.addEventListener('keypress', function(e) {
                     if (e.key === 'Enter') {
                         searchAdminBooks();
                     }
