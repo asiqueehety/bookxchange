@@ -250,20 +250,6 @@ CREATE TABLE sold_books (
     book_id UUID NOT NULL REFERENCES books(book_id)
 );
 ```
-
-### **Spring Session Table** (Auto-created)
-```sql
-CREATE TABLE spring_session (
-    primary_id VARCHAR(36) PRIMARY KEY,
-    session_id VARCHAR(36) NOT NULL,
-    creation_time BIGINT NOT NULL,
-    last_access_time BIGINT NOT NULL,
-    max_inactive_interval INTEGER NOT NULL,
-    expiry_time BIGINT NOT NULL,
-    principal_name VARCHAR(100)
-);
-```
-
 ---
 
 ## 🔐 Security & User Roles
@@ -283,16 +269,6 @@ CREATE TABLE spring_session (
 | Manage All Users | ✅ | ❌ | ❌ |
 | View All Books | ✅ | ❌ | ❌ |
 | Admin Dashboard | ✅ | ❌ | ❌ |
-
-### **Default Test Accounts**
-
-| Username | Password | Role | Email |
-|----------|----------|------|-------|
-| admin | admin123 | ADMIN | admin@bookxchange.com |
-| test_seller | admin123 | SELLER | seller@bookxchange.com |
-| test_buyer | admin123 | BUYER | buyer@bookxchange.com |
-
-⚠️ **IMPORTANT**: Change these credentials in production!
 
 ---
 
